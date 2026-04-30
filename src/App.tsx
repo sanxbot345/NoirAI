@@ -133,14 +133,26 @@ export default function App() {
   const [loginForm, setLoginForm] = useState({ user: '', pass: '' });
   const [customAvatar, setCustomAvatar] = useState<string | null>(() => localStorage.getItem('noir_avatar'));
   const [userAvatar, setUserAvatar] = useState<string | null>(() => localStorage.getItem('user_anime_avatar'));
+  const [currentUserUid, setCurrentUserUid] = useState<string | null>(() => localStorage.getItem('noir_current_user_uid') || null);
+
+  useEffect(() => {
+    if (currentUserUid) {
+      localStorage.setItem('noir_current_user_uid', currentUserUid);
+    } else {
+      localStorage.removeItem('noir_current_user_uid');
+    }
+  }, [currentUserUid]);
 
   // API Key & Credit States
   const [credits, setCredits] = useState<number>(() => {
     const saved = localStorage.getItem('noir_credits');
     return saved ? parseFloat(saved) : 10.00; // Starting $10
   });
+
+  const currentApiKeysKey = currentUserUid ? `noir_api_keys_${currentUserUid}` : 'noir_api_keys';
+
   const [apiKeys, setApiKeys] = useState<any[]>(() => {
-    const saved = localStorage.getItem('noir_api_keys');
+    const saved = localStorage.getItem(currentUserUid ? `noir_api_keys_${currentUserUid}` : 'noir_api_keys');
     return saved ? JSON.parse(saved) : [];
   });
   const [showApiModal, setShowApiModal] = useState(false);
@@ -152,8 +164,13 @@ export default function App() {
   }, [credits]);
 
   useEffect(() => {
-    localStorage.setItem('noir_api_keys', JSON.stringify(apiKeys));
-  }, [apiKeys]);
+    const saved = localStorage.getItem(currentApiKeysKey);
+    setApiKeys(saved ? JSON.parse(saved) : []);
+  }, [currentApiKeysKey]);
+
+  useEffect(() => {
+    localStorage.setItem(currentApiKeysKey, JSON.stringify(apiKeys));
+  }, [apiKeys, currentApiKeysKey]);
 
   const generateApiKey = () => {
     if (!newKeyName.trim()) return alert("Please provide a name for your API Key");
@@ -214,6 +231,7 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setIsLoggedIn(true);
+        setCurrentUserUid(user.uid);
         setShowLoginModal(false);
       } else {
         // We only clear if login was solely driven by Firebase.
@@ -228,6 +246,7 @@ export default function App() {
   const handleLogin = () => {
     if (loginForm.user === "admin" && loginForm.pass === "1234") {
       setIsLoggedIn(true);
+      setCurrentUserUid('admin');
       setShowLoginModal(false);
     } else {
       alert("Username atau Password Salah");
@@ -236,8 +255,9 @@ export default function App() {
 
   const handleGoogleLogin = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
       setIsLoggedIn(true);
+      setCurrentUserUid(result.user.uid);
       setShowLoginModal(false);
     } catch (error) {
       if (error instanceof Error) {
@@ -252,6 +272,7 @@ export default function App() {
     try {
       await signOut(auth);
       setIsLoggedIn(false);
+      setCurrentUserUid(null);
       setShowLoginModal(true);
       setIsMenuOpen(false);
     } catch (error) {

@@ -1,0 +1,6 @@
+{
+  "name": "Noir AI Vision",
+  "description": "An AI assistant with a sleek black UI and integrated camera for visual intelligence.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": []
+}

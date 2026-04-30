@@ -145,6 +145,7 @@ export default function App() {
   });
   const [showApiModal, setShowApiModal] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
+  const [newKeyExpiry, setNewKeyExpiry] = useState('none');
 
   useEffect(() => {
     localStorage.setItem('noir_credits', credits.toFixed(2));
@@ -155,15 +156,26 @@ export default function App() {
   }, [apiKeys]);
 
   const generateApiKey = () => {
-    if (!newKeyName.trim()) return alert("Berikan nama untuk API Key Anda");
+    if (!newKeyName.trim()) return alert("Please provide a name for your API Key");
+    
+    let expiryLabel = 'Never';
+    if (newKeyExpiry !== 'none') {
+      const days = parseInt(newKeyExpiry);
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + days);
+      expiryLabel = expiryDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
     const newKey = {
       id: Math.random().toString(36).substr(2, 9),
       name: newKeyName,
       key: `nr-${Math.random().toString(36).substr(2, 24)}`,
-      createdAt: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+      createdAt: new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
+      expiryDate: expiryLabel,
     };
     setApiKeys([newKey, ...apiKeys]);
     setNewKeyName('');
+    setNewKeyExpiry('none');
   };
 
   const deleteApiKey = (id: string) => {
@@ -579,8 +591,8 @@ export default function App() {
               {/* Header */}
               <div className="p-6 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-[#00ffff]/5 to-transparent">
                 <div>
-                  <h2 className="text-2xl font-black text-white tracking-widest uppercase">Manajemen API</h2>
-                  <p className="text-xs text-[#00ffff]/60 font-bold uppercase tracking-wider">Terapkan aplikasi cerdas dengan Noir API</p>
+                  <h2 className="text-2xl font-black text-white tracking-widest uppercase">API Management</h2>
+                  <p className="text-xs text-[#00ffff]/60 font-bold uppercase tracking-wider">Deploy smart applications with Noir API</p>
                 </div>
                 <button 
                   onClick={() => setShowApiModal(false)}
@@ -594,15 +606,15 @@ export default function App() {
                 {/* Credit Overview */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-5 rounded-xl bg-white/5 border border-white/10 flex flex-col justify-between min-h-[100px]">
-                    <span className="text-[10px] uppercase font-black tracking-[0.2em] text-[#00ffff]/60">Total Kredit API</span>
+                    <span className="text-[10px] uppercase font-black tracking-[0.2em] text-[#00ffff]/60">Total API Credits</span>
                     <div className="flex items-end justify-between">
                       <span className="text-4xl font-black text-white font-mono">${credits.toFixed(2)} <span className="text-sm text-white/40">USD</span></span>
-                      <span className="text-[10px] bg-[#00ffff]/10 text-[#00ffff] px-2 py-1 rounded font-bold uppercase">Aktif</span>
+                      <span className="text-[10px] bg-[#00ffff]/10 text-[#00ffff] px-2 py-1 rounded font-bold uppercase">Active</span>
                     </div>
                   </div>
                   <div className="p-5 rounded-xl bg-white/5 border border-white/10 border-dashed flex flex-col justify-center items-center text-center cursor-pointer hover:bg-white/10 transition-colors">
-                    <span className="text-[10px] uppercase font-black tracking-[0.2em] text-white/40 mb-1">Peringkat Saldo Rendah</span>
-                    <p className="text-xs text-white/60">Isi ulang otomatis saat ini dinonaktifkan.</p>
+                    <span className="text-[10px] uppercase font-black tracking-[0.2em] text-white/40 mb-1">Low Balance Warning</span>
+                    <p className="text-xs text-white/60">Auto-recharge is currently disabled.</p>
                   </div>
                 </div>
 
@@ -610,31 +622,41 @@ export default function App() {
                 <div className="space-y-4">
                   <h3 className="text-sm font-black text-white/80 uppercase tracking-widest flex items-center gap-2">
                     <Plus size={16} className="text-[#00ffff]" />
-                    Buat Kunci Baru
+                    Create New Key
                   </h3>
-                  <div className="flex gap-3">
+                  <div className="flex flex-col md:flex-row gap-3">
                     <input 
                       type="text" 
-                      placeholder="Masukkan nama Kunci API (contoh: App Produksi)" 
+                      placeholder="Enter API Key name (e.g., Production App)" 
                       value={newKeyName}
                       onChange={(e) => setNewKeyName(e.target.value)}
                       className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#00ffff]/50 transition-colors"
                     />
+                    <select
+                      value={newKeyExpiry}
+                      onChange={(e) => setNewKeyExpiry(e.target.value)}
+                      className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#00ffff]/50 transition-colors cursor-pointer appearance-none"
+                    >
+                      <option value="none" className="bg-[#0A0A0A]">Never Expires</option>
+                      <option value="7" className="bg-[#0A0A0A]">Expires in 7 days</option>
+                      <option value="30" className="bg-[#0A0A0A]">Expires in 30 days</option>
+                      <option value="90" className="bg-[#0A0A0A]">Expires in 90 days</option>
+                    </select>
                     <button 
                       onClick={generateApiKey}
-                      className="bg-[#00ffff] text-black font-black px-6 rounded-xl text-xs uppercase tracking-widest hover:bg-[#00ffff]/90 transition-all active:scale-95 shadow-[0_0_15px_rgba(0,255,255,0.3)]"
+                      className="bg-[#00ffff] text-black font-black px-6 py-3 md:py-0 rounded-xl text-xs uppercase tracking-widest hover:bg-[#00ffff]/90 transition-all active:scale-95 shadow-[0_0_15px_rgba(0,255,255,0.3)] min-w-[100px]"
                     >
-                      Bikin
+                      Create
                     </button>
                   </div>
                 </div>
 
                 {/* Key List */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-black text-white/80 uppercase tracking-widest">Kunci Aktif</h3>
+                  <h3 className="text-sm font-black text-white/80 uppercase tracking-widest">Active Keys</h3>
                   {apiKeys.length === 0 ? (
                     <div className="py-10 text-center border-2 border-dashed border-white/5 rounded-2xl">
-                      <p className="text-white/30 text-sm">Belum ada Kunci API yang dibuat.</p>
+                      <p className="text-white/30 text-sm">No API Keys created yet.</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -645,26 +667,31 @@ export default function App() {
                               <span className="font-bold text-white text-sm">{key.name}</span>
                               <span className="text-[9px] text-[#00ffff] bg-[#00ffff]/10 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">Live</span>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 mt-1">
                               <code className="text-[10px] text-white/40 font-mono tracking-wider break-all">{key.key}</code>
                               <button 
                                 onClick={() => {
                                   navigator.clipboard.writeText(key.key);
-                                  alert("Kunci berhasil disalin!");
+                                  alert("Key copied to clipboard!");
                                 }}
                                 className="p-1 hover:bg-white/10 rounded text-white/30 hover:text-white transition-colors"
                               >
                                 <Copy size={12} />
                               </button>
                             </div>
+                            <div className="text-[10px] text-white/30 font-mono mt-1">
+                              Expires: {key.expiryDate || 'Never'}
+                            </div>
                           </div>
                           <div className="text-right flex flex-col items-end gap-2 shrink-0 ml-4">
-                            <span className="text-[10px] text-white/30 uppercase font-bold">{key.createdAt}</span>
+                            <span className="text-[10px] text-white/30 uppercase font-bold text-right border-b border-transparent">
+                              Created:<br/> {key.createdAt}
+                            </span>
                             <button 
                               onClick={() => deleteApiKey(key.id)}
-                              className="text-[10px] text-red-500/50 hover:text-red-500 font-black uppercase tracking-widest transition-colors opacity-0 group-hover:opacity-100"
+                              className="text-[10px] text-red-500/50 hover:text-red-500 font-black uppercase tracking-widest transition-colors opacity-0 group-hover:opacity-100 mt-2"
                             >
-                              Cabut Kunci
+                              Revoke Key
                             </button>
                           </div>
                         </div>
@@ -676,7 +703,7 @@ export default function App() {
 
               {/* Bottom Info */}
               <div className="p-4 bg-white/5 border-t border-white/10 text-center">
-                <p className="text-[10px] text-white/30 uppercase tracking-[0.1em]">Data penggunaan dapat tertunda hingga 5 menit. Syarat Pemakaian Noir API Berlaku.</p>
+                <p className="text-[10px] text-white/30 uppercase tracking-[0.1em]">Usage data may be delayed by up to 5 minutes. Noir API Terms of Service apply.</p>
               </div>
             </motion.div>
           </motion.div>
@@ -774,7 +801,7 @@ export default function App() {
                   className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors border border-dashed border-white/20 text-sm font-bold tracking-widest uppercase font-rajdhani text-white/70"
                 >
                   <Key size={18} className="text-[#00ffff]" />
-                  Manajemen API
+                  API Management
                 </button>
 
                 {isLoggedIn ? (
